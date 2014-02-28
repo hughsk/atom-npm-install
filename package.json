@@ -8,7 +8,7 @@
     "npm-install:save",
     "npm-install:save-dev"
   ],
-  "repository": "https://github.com/atom/npm-install",
+  "repository": "https://github.com/hughsk/atom-npm-install",
   "license": "MIT",
   "engines": {
     "atom": ">0.50.0"
