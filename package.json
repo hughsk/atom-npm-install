@@ -1,0 +1,26 @@
+{
+  "name": "npm-install",
+  "main": "./index",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Automatically install and save any missing npm modules being used in the current file",
+  "activationEvents": [
+    "npm-install:save",
+    "npm-install:save-dev"
+  ],
+  "repository": "https://github.com/atom/npm-install",
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {
+    "remove-element": "0.0.0",
+    "domify": "~1.2.2",
+    "safe-json-parse": "~1.0.1",
+    "resolve": "~0.6.1",
+    "coffee-script": "~1.7.1",
+    "ansi-html-stream": "0.0.3",
+    "detective": "~2.4.0",
+    "findup": "~0.1.3"
+  }
+}
