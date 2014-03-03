@@ -8,5 +8,5 @@
 # For more detailed documentation see
 # https://atom.io/docs/latest/advanced/keymaps
 '.workspace':
-  'ctrl-shift-i': 'npm-install:save'
-  'ctrl-shift-d': 'npm-install:save-dev'
+  'ctrl-alt-i': 'npm-install:save'
+  'ctrl-alt-d': 'npm-install:save-dev'
