@@ -106,9 +106,10 @@ function save(opts) {
       if (err) return console.error(err)
 
       var output = ansihtml()
-      var deps = Object.keys(
-        pkg[dkey] = pkg[dkey] || {}
-      )
+      var deps = []
+        .concat(Object.keys(pkg.dependencies || {}))
+        .concat(Object.keys(pkg.devDependencies || {}))
+        .concat(Object.keys(pkg.peerDependencies || {}))
 
       found = found.filter(function(module) {
         return deps.indexOf(module) === -1
