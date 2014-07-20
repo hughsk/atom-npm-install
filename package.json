@@ -1,7 +1,7 @@
 {
   "name": "npm-install",
   "main": "./index",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Automatically install and save any missing npm modules being used in the current file",
   "activationEvents": [
