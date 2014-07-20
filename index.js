@@ -94,6 +94,8 @@ function save(opts) {
       return module.split('/')[0]
     }).filter(function(module) {
       return module !== '.'
+          && module !== '..'
+          && module !== 'atom'
     })
 
     if (!found.length) return notice(messages.cantFind)
