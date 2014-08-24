@@ -6,10 +6,6 @@ Automatically install and save any missing npm modules being used in the current
 
 Uses [detective](http://github.com/substack/node-detective) to analyse the current file for require calls, installing and saving any that aren't already in the project's `package.json` file.
 
-## Usage ##
-
-Open the Command Palette, and type `npm install` if you're in a JavaScript or CoffeeScript file.
-
 ## Fixing your PATH ##
 
 In some cases, Atom won't always have the correct path to resolve npm. This
@@ -17,8 +13,12 @@ will result in an `ENOENT` error. In that case, add the following to the top
 of your init script:
 
 ``` javascript
-process.env.PATH = ':/usr/local/bin'
+process.env.PATH += ':/usr/local/bin'
 ```
+
+## Usage ##
+
+Open the Command Palette, and type `npm install` if you're in a JavaScript or CoffeeScript file.
 
 ## Keybindings ##
 
