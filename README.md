@@ -1,26 +1,45 @@
-# npm-install [![Flattr this!](https://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=hughskennedy&url=http://github.com/hughsk/npm-install&title=npm-install&description=hughsk/npm-install%20on%20GitHub&language=en_GB&tags=flattr,github,javascript&category=software)[![experimental](http://hughsk.github.io/stability-badges/dist/experimental.svg)](http://github.com/hughsk/stability-badges) #
+# npm-install [![stable](http://hughsk.github.io/stability-badges/dist/stable.svg)](http://github.com/hughsk/stability-badges) #
 
-Automatically install and save any missing npm modules being used in the current file.
+[Atom](http://atom.io/) plugin to automatically install and save any selected
+npm packages not already included in the closest `package.json` file.
 
-![Imgur](http://i.imgur.com/yH6kdSq.gif)
-
-Uses [detective](http://github.com/substack/node-detective) to analyse the current file for require calls, installing and saving any that aren't already in the project's `package.json` file.
+![npm-install](http://i.imgur.com/i5FKsXH.gif)
 
 ## Usage ##
 
-Open the Command Palette, and type `npm install` if you're in a JavaScript or CoffeeScript file.
+1. Select the `require` or `import` statements of the
+   packages you want to install.
+2. Open the Command Palette, and type `npm install` to
+   bring up the available commands.
+3. Your packages will be installed. Enjoy!
 
-## Fixing your PATH ##
+## Configuration Options
 
-In some cases, Atom won't always have the correct path to resolve npm. This
-will result in an `ENOENT` error. In that case, add the following to the top
-of your init script:
+Accessible from `Settings > Packages > npm-install`:
 
-``` javascript
-process.env.PATH = ':/usr/local/bin'
-```
+* **Install Cache:** force your installations to always or never use the local cache.
+* **Custom npm PATH lookup:** useful if you keep your npm
+  in an unconventional location. Point this to the directory
+  of your npm executable should you have
+  [any issues](https://github.com/hughsk/atom-npm-install/issues/2).
 
-## Keybindings ##
+## Changelog
+
+### 3.0.0
+
+* Packages must now be selected to be installed. This gives
+  you control over which packages are being installed instead
+  of trying to work that out for you, making it simpler to
+  support [scoped packages](https://docs.npmjs.com/misc/scope) :sparkles:.
+* The installation pane is now attached to the right
+  instead of the bottom of the screen.
+* ES6 support! No more parsing errors, also `import`
+  statements can be installed like you would requires too.
+* CoffeeScript is no longer supported. If you'd like that back, I'd recommend
+sticking with the previous version or submitting a pull request to
+[atom-selected-requires](https://github.com/hughsk/atom-selected-requires).
+
+### 2.0.0
 
 As of version `2.0.0` keybindings are not included by default. If you miss
 these shortcuts, simply add the following to your keymap file:
