@@ -8,26 +8,21 @@
   &.tool-panel {
     overflow-y: scroll;
     padding: @component-padding;
-    font-size: @font-size;
+    font-size: 8px;
     font-family: monospace;
     white-space: pre;
-    height: 100px;
+    height: 100%;
+    width: 20vw;
+    max-width: 400px;
     background-color: #000;
     position: relative;
     border-top: 1px solid @background-color-highlight;
+    text-shadow: none;
+    color: #ccc;
   }
 
   .terminal {
     position: absolute;
     bottom: @component-padding;
-  }
-
-  &.overlay {
-    transition: opacity 0.25s;
-    text-align: center;
-    opacity: 1;
-    &.fade-out { opacity: 0; }
-    &.warning { color: @text-color-error; }
-    &.success { color: @text-color-success; }
   }
 }

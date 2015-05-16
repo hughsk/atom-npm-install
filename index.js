@@ -1,166 +1,165 @@
-var core = require('resolve/lib/core.json')
-var JSONParse = require('safe-json-parse')
-var ansihtml = require('ansi-html-stream')
-var spawn = require('child_process').spawn
-var remove = require('remove-element')
-var stats = require('npm-stats')()
-var coffee = require('coffee-script')
-var detective = require('detective')
-var map = require('map-async')
-var domify = require('domify')
-var findup = require('findup')
-var path = require('path')
-var fs = require('fs')
+var npmProc = null
+var messages
+var panel
+var outer
+var inner
 
 exports.activate = activate
-exports.deactivate = deactivate
-
-var messages = {
-    cantFind: "Hmm... Couldn't find any packages to install!"
-  , oneAtATime: "Sorry, you can only run one installation at a time"
-  , alreadyInstalled: "Hey, looks like everything has already been installed!"
+exports.config   = {
+  cacheBehaviour: {
+    'type': 'string',
+    'default': 'default',
+    'title': 'Install Cache',
+    'description': 'Completely enable or disable package caching. By default, this follows your npm configuration behaviour',
+    'enum': [
+      'default',
+      'always cache',
+      'never cache'
+    ]
+  }
 }
-
-var panel
-var inner
-var npm
 
 function activate() {
-  atom.workspaceView.command('npm-install:save', save({ dev: false }))
-  atom.workspaceView.command('npm-install:save-dev', save({ dev: true }))
+  const Messages = require('atom-message-panel').MessagePanelView
+
+  messages = messages || new Messages({
+    title: 'npm install'
+  })
+
+  atom.workspaceView.command('npm-install:save', Save({ dev: false }))
+  atom.workspaceView.command('npm-install:save-dev', Save({ dev: true }))
 }
 
-function deactivate() {
-  npm.exit()
-  inner.innerHTML = ''
-  remove(panel)
-  remove(inner)
-}
-
-function notice(message, className) {
-  var overlay = document.createElement('div')
-
-  overlay.setAttribute('class', 'overlay npm-install from-bottom')
-  overlay.innerText = message
-
-  if (className) overlay.classList.add(className)
-
-  atom.workspaceView.append(overlay)
-
-  setTimeout(function() {
-    overlay.classList.add('fade-out')
-  }, 4000)
-
-  setTimeout(function() {
-    remove(overlay)
-  }, 4500)
-}
-
-function save(opts) {
-  opts = opts || {}
+function Save(opts) {
+  const Selected = require('atom-selected-requires')
+  const relative = require('relative-require-regex')
+  const core     = require('resolve/lib/core.json')
+  const spawn    = require('child_process').spawn
+  const ansihtml = require('ansi-html-stream')
+  const Combine  = require('combine-stream')
+  const ansiHTML = require('ansi-to-html')
+  const findup   = require('findup')
+  const domify   = require('domify')
+  const split    = require('split')
+  const path     = require('path')
+  const fs       = require('fs')
+  const dev      = !!opts.dev
 
   inner = inner || document.createElement('div')
-  panel = panel || document.createElement('div')
-  panel.setAttribute('class', 'panel-bottom tool-panel npm-install')
-  panel.appendChild(inner)
+  outer = outer || document.createElement('div')
+  outer.setAttribute('class', 'panel-bottom tool-panel npm-install')
   inner.setAttribute('class', 'terminal')
+  outer.appendChild(inner)
+  panel = panel || atom.workspace.addRightPanel({
+    item: outer,
+    visible: false
+  })
 
   return function() {
-    var editor = atom.workspace.activePaneItem
-    var view = atom.workspaceView
+    messages.clear()
 
-    var data = editor.getBuffer().cachedText
-    var file = editor.getPath()
-    var cwd = path.dirname(file)
-
-    var dkey = opts.dev
-      ? 'devDependencies'
-      : 'dependencies'
-
-    var flag = opts.dev
-      ? '--save-dev'
-      : '--save'
+    const editor   = atom.workspace.getActiveEditor()
+    const filename = editor.getPath()
+    const dirname  = path.dirname(filename)
+    const depKey   = dev ? 'devDependencies' : 'dependencies'
+    const depFlag  = dev ? '--save-dev' : '--save'
 
     try {
-      var found = detective(path.extname(file) === '.coffee'
-        ? coffee.compile(data)
-        : data
-      )
+      var selected = Selected(editor)
     } catch(e) {
-      return notice(e.message, 'warning')
+      return error(e)
     }
 
-    found = found.filter(function(module) {
-      return core.indexOf(module) === -1
-    }).map(function(module) {
-      return module.split('/')[0]
-    }).filter(function(module) {
-      return module !== '.'
-          && module !== '..'
-          && module !== 'atom'
-    })
+    findup(dirname, 'package.json', function(err, cwd) {
+      if (err) return error(err)
 
-    if (!found.length) return notice(messages.cantFind)
-    if (!(cwd = findup.sync(cwd, 'package.json'))) return
+      try {
+        var pkgFile = path.join(cwd, 'package.json')
+        var pkgData = fs.readFileSync(pkgFile, 'utf8')
+        var pkgJSON = JSON.parse(pkgData)
+        var pkgDeps = pkgJSON[depKey] || {}
+      } catch(e) {
+        return error(e)
+      }
 
-    var pkgFile = path.join(cwd, 'package.json')
-    var pkgData = fs.readFileSync(pkgFile, 'utf8')
-
-    JSONParse(pkgData, function(err, pkg) {
-      if (err) return console.error(err)
-
-      var output = ansihtml()
-      var deps = []
-        .concat(Object.keys(pkg.dependencies || {}))
-        .concat(Object.keys(pkg.devDependencies || {}))
-        .concat(Object.keys(pkg.peerDependencies || {}))
-
-      found = found.filter(function(module) {
-        return deps.indexOf(module) === -1
+      var targets = selected.filter(function(name) {
+        return !relative().test(name)
+      }).filter(function(name) {
+        return core.indexOf(name) === -1
+      }).map(function(dir) {
+        return dir.split('/')[0]
+      }).filter(function(name) {
+        return !(name in pkgDeps)
       })
 
-      if (!found.length) return notice(messages.alreadyInstalled, 'success')
-      if (npm) return notice(messages.oneAtATime, 'warning')
+      if (!targets.length) return error(new Error('Nothing to install!'))
 
-      return map(found, function(name, next) {
-        stats.module(name).info(function(err, data) {
-          if (err && err.message !== 'missing') return next(err)
-          next(null, data ? name : null)
-        })
-      }, function(err, found) {
-        found = found.filter(Boolean)
+      var cache = atom.config.get('npm-install.cacheBehaviour')
+      var exe   = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+      var args  = [exe, 'install', depFlag, '--color=always']
+        .concat(targets)
 
-        if (!found.length) return notice(messages.alreadyInstalled, 'success')
-        var exe = process.platform === 'win32'
-          ? 'npm.cmd'
-          : 'npm'
+      if (cache === 'always cache') args.push('--cache-min=Infinity')
+      if (cache === 'never cache')  args.push('--cache-min=0')
 
-        npm = spawn(exe, [
-            'install'
-          , '--color=always'
-          , flag
-        ].concat(found), {
-            cwd: cwd
-          , env: process.env
-        })
+      queue(dirname, args)
+    })
+  }
 
-        npm.stdout.pipe(output)
-        npm.stderr.pipe(output)
-        npm.once('exit', function(code) {
-          npm = null
-          if (code === 0) return setTimeout(remove.bind(null, panel), 1000)
-          notice('Invalid exit code from npm: ' + code, 'warning')
-        })
+  function queue(dirname, args) {
+    if (npmProc) return error(new Error(
+      'Only one installation can be run at a time. ' +
+      'Try selecting multiple packages before commencing an install next time.'
+    ))
 
+    var convert = new ansiHTML({
+      newline: false,
+      escapeXML: false,
+      stream: true
+    })
+
+    inner.innerHTML = ''
+    npmProc = spawn(args[0], args.slice(1), {
+      cwd: dirname,
+      env: process.env
+    })
+
+    var output = new Combine([
+      npmProc.stdout,
+      npmProc.stderr
+    ])
+
+    output.pipe(split()).on('data', function(line) {
+      inner.appendChild(domify(convert.toHtml(line) + '<br/>'))
+    })
+
+    panel.show()
+    npmProc.on('exit', function(code) {
+      if (code !== 0) error(new Error('Unexpected exit code from npm: ' + code))
+
+      setTimeout(function() {
+        npmProc = null
+        panel.hide()
         inner.innerHTML = ''
-        output.on('data', function(data) {
-          inner.innerHTML += data
-        })
-
-        if (!panel.parentNode)
-          view.appendToBottom(panel)
-      })
-
+      }, 1000)
     })
+  }
+}
+
+function error(err) {
+  const Message = require('atom-message-panel').PlainMessageView
+  const Lined   = require('atom-message-panel').LineMessageView
+
+  messages.attach()
+
+  if (!err.loc) {
+    messages.add(new Message({
+      message: err.message
+    }))
+  } else {
+    messages.add(new Lined({
+      message: err.message,
+      line: err.loc.line
+    }))
   }
 }
