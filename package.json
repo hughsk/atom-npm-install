@@ -25,6 +25,6 @@
     "relative-require-regex": "^1.0.1",
     "resolve": "^1.1.6",
     "split": "^0.3.3",
-    "which": "^1.0.9"
+    "which": "^1.1.1"
   }
 }

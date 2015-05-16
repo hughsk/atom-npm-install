@@ -16,6 +16,12 @@ exports.config   = {
       'always cache',
       'never cache'
     ]
+  },
+  npmPath: {
+    'type': 'string',
+    'default': '',
+    'title': 'Custom npm PATH lookup',
+    'description': 'Useful if you keep your npm in an unconventional location'
   }
 }
 
@@ -40,6 +46,7 @@ function Save(opts) {
   const ansiHTML = require('ansi-to-html')
   const findup   = require('findup')
   const domify   = require('domify')
+  const which    = require('which')
   const split    = require('split')
   const path     = require('path')
   const fs       = require('fs')
@@ -118,30 +125,40 @@ function Save(opts) {
       stream: true
     })
 
-    inner.innerHTML = ''
-    npmProc = spawn(args[0], args.slice(1), {
-      cwd: dirname,
-      env: process.env
-    })
+    var addPath = (atom.config.get('npm-install:npmPath') || '').trim()
+    var newPath = process.env.PATH + ':/usr/bin/node'
+    if (addPath) newPath = addPath + ':' + newPath
 
-    var output = new Combine([
-      npmProc.stdout,
-      npmProc.stderr
-    ])
+    which(args[0], {
+      path: process.env.PATH + ':/usr/bin/node'
+    }, function(err, npm) {
+      if (err) return error(err)
 
-    output.pipe(split()).on('data', function(line) {
-      inner.appendChild(domify(convert.toHtml(line) + '<br/>'))
-    })
+      inner.innerHTML = ''
+      npmProc = spawn(npm, args.slice(1), {
+        cwd: dirname,
+        env: process.env
+      })
 
-    panel.show()
-    npmProc.on('exit', function(code) {
-      if (code !== 0) error(new Error('Unexpected exit code from npm: ' + code))
+      var output = new Combine([
+        npmProc.stdout,
+        npmProc.stderr
+      ])
 
-      setTimeout(function() {
-        npmProc = null
-        panel.hide()
-        inner.innerHTML = ''
-      }, 1000)
+      output.pipe(split()).on('data', function(line) {
+        inner.appendChild(domify(convert.toHtml(line) + '<br/>'))
+      })
+
+      panel.show()
+      npmProc.on('exit', function(code) {
+        if (code !== 0) error(new Error('Unexpected exit code from npm: ' + code))
+
+        setTimeout(function() {
+          npmProc = null
+          panel.hide()
+          inner.innerHTML = ''
+        }, 1000)
+      })
     })
   }
 }
