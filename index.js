@@ -5,7 +5,7 @@ var outer
 var inner
 
 exports.activate = activate
-exports.config   = {
+exports.config = {
   cacheBehaviour: {
     'type': 'string',
     'default': 'default',
@@ -32,25 +32,31 @@ function activate() {
     title: 'npm install'
   })
 
-  atom.workspaceView.command('npm-install:save', Save({ dev: false }))
-  atom.workspaceView.command('npm-install:save-dev', Save({ dev: true }))
+  atom.commands.add("atom-workspace", {
+    "npm-install:save": Save({
+      dev: false
+    }),
+    "npm-install:save-dev": Save({
+      dev: true
+    })
+  })
 }
 
 function Save(opts) {
   const Selected = require('atom-selected-requires')
   const relative = require('relative-require-regex')
-  const core     = require('resolve/lib/core.json')
-  const spawn    = require('child_process').spawn
+  const core = require('resolve/lib/core.json')
+  const spawn = require('child_process').spawn
   const ansihtml = require('ansi-html-stream')
-  const Combine  = require('combine-stream')
+  const Combine = require('combine-stream')
   const ansiHTML = require('ansi-to-html')
-  const findup   = require('findup')
-  const domify   = require('domify')
-  const which    = require('which')
-  const split    = require('split')
-  const path     = require('path')
-  const fs       = require('fs')
-  const dev      = !!opts.dev
+  const findup = require('findup')
+  const domify = require('domify')
+  const which = require('which')
+  const split = require('split')
+  const path = require('path')
+  const fs = require('fs')
+  const dev = !!opts.dev
 
   inner = inner || document.createElement('div')
   outer = outer || document.createElement('div')
@@ -65,15 +71,15 @@ function Save(opts) {
   return function() {
     messages.clear()
 
-    const editor   = atom.workspace.getActiveEditor()
+    const editor = atom.workspace.getActiveTextEditor()
     const filename = editor.getPath()
-    const dirname  = path.dirname(filename)
-    const depKey   = dev ? 'devDependencies' : 'dependencies'
-    const depFlag  = dev ? '--save-dev' : '--save'
+    const dirname = path.dirname(filename)
+    const depKey = dev ? 'devDependencies' : 'dependencies'
+    const depFlag = dev ? '--save-dev' : '--save'
 
     try {
       var selected = Selected(editor)
-    } catch(e) {
+    } catch (e) {
       return error(e)
     }
 
@@ -85,7 +91,7 @@ function Save(opts) {
         var pkgData = fs.readFileSync(pkgFile, 'utf8')
         var pkgJSON = JSON.parse(pkgData)
         var pkgDeps = pkgJSON[depKey] || {}
-      } catch(e) {
+      } catch (e) {
         return error(e)
       }
 
@@ -102,12 +108,12 @@ function Save(opts) {
       if (!targets.length) return error(new Error('Nothing to install!'))
 
       var cache = atom.config.get('npm-install.cacheBehaviour')
-      var exe   = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-      var args  = [exe, 'install', depFlag, '--color=always']
+      var exe = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+      var args = [exe, 'install', depFlag, '--color=always']
         .concat(targets)
 
       if (cache === 'always cache') args.push('--cache-min=Infinity')
-      if (cache === 'never cache')  args.push('--cache-min=0')
+      if (cache === 'never cache') args.push('--cache-min=0')
 
       queue(dirname, args)
     })
@@ -165,7 +171,7 @@ function Save(opts) {
 
 function error(err) {
   const Message = require('atom-message-panel').PlainMessageView
-  const Lined   = require('atom-message-panel').LineMessageView
+  const Lined = require('atom-message-panel').LineMessageView
 
   messages.attach()
 
