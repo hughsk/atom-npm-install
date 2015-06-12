@@ -32,8 +32,8 @@ function activate() {
     title: 'npm install'
   })
 
-  atom.workspaceView.command('npm-install:save', Save({ dev: false }))
-  atom.workspaceView.command('npm-install:save-dev', Save({ dev: true }))
+  atom.commands.add('atom-workspace', 'npm-install:save', Save({ dev: false }))
+  atom.commands.add('atom-workspace', 'npm-install:save-dev', Save({ dev: true }))
 }
 
 function Save(opts) {
@@ -54,7 +54,7 @@ function Save(opts) {
 
   inner = inner || document.createElement('div')
   outer = outer || document.createElement('div')
-  outer.setAttribute('class', 'panel-bottom tool-panel npm-install')
+  outer.setAttribute('class', 'npm-install')
   inner.setAttribute('class', 'terminal')
   outer.appendChild(inner)
   panel = panel || atom.workspace.addRightPanel({
@@ -65,7 +65,7 @@ function Save(opts) {
   return function() {
     messages.clear()
 
-    const editor   = atom.workspace.getActiveEditor()
+    const editor   = atom.workspace.getActiveTextEditor()
     const filename = editor.getPath()
     const dirname  = path.dirname(filename)
     const depKey   = dev ? 'devDependencies' : 'dependencies'
