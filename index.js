@@ -48,6 +48,7 @@ function Save(opts) {
   const domify   = require('domify')
   const which    = require('which')
   const split    = require('split')
+  const xtend    = require('xtend')
   const path     = require('path')
   const fs       = require('fs')
   const dev      = !!opts.dev
@@ -126,18 +127,20 @@ function Save(opts) {
     })
 
     var addPath = (atom.config.get('npm-install:npmPath') || '').trim()
-    var newPath = process.env.PATH + ':/usr/bin/node'
+    var newPath = process.env.PATH + ':/usr/bin/node:/usr/local/bin'
     if (addPath) newPath = addPath + ':' + newPath
 
     which(args[0], {
-      path: process.env.PATH + ':/usr/bin/node'
+      path: newPath
     }, function(err, npm) {
       if (err) return error(err)
 
       inner.innerHTML = ''
       npmProc = spawn(npm, args.slice(1), {
         cwd: dirname,
-        env: process.env
+        env: xtend(process.env, {
+          PATH: newPath
+        })
       })
 
       var output = new Combine([
