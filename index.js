@@ -37,9 +37,9 @@ function activate() {
 }
 
 function Save(opts) {
+  const core     = flattenCoreModuleList(require('resolve/lib/core.json'))
   const Selected = require('atom-selected-requires')
   const relative = require('relative-require-regex')
-  const core     = require('resolve/lib/core.json')
   const spawn    = require('child_process').spawn
   const ansihtml = require('ansi-html-stream')
   const Combine  = require('combine-stream')
@@ -182,4 +182,10 @@ function error(err) {
       line: err.loc.line
     }))
   }
+}
+
+function flattenCoreModuleList(modules) {
+  return Object.keys(modules).reduce(function (out, key) {
+    return out.concat(modules[key])
+  }, [])
 }
