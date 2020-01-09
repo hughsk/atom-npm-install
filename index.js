@@ -95,7 +95,7 @@ function Save(opts) {
       }).filter(function(name) {
         return core.indexOf(name) === -1
       }).map(function(dir) {
-        return dir.split('/')[0]
+        return dir.match(/^((?:@[^/]*\/)?(?:[^/]*)).*?$/)[1]
       }).filter(function(name) {
         return !(name in pkgDeps)
       })
